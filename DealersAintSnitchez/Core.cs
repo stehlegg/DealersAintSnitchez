@@ -2,15 +2,9 @@
 using HarmonyLib;
 using MelonLoader;
 using ScheduleOne.Economy;
-using ScheduleOne.Employees;
-using ScheduleOne.Law;
-using ScheduleOne.Noise;
 using ScheduleOne.NPCs;
-using ScheduleOne.NPCs.Actions;
-using ScheduleOne.NPCs.Behaviour;
 using ScheduleOne.NPCs.Responses;
 using ScheduleOne.PlayerScripts;
-using UnityEngine.SceneManagement;
 
 [assembly: MelonInfo(typeof(DealersAintSnitchez.Core), "DealersAintSnitchez", "1.0.0", "Stehlel", null)]
 [assembly: MelonGame("TVGS", "Schedule I")]
@@ -24,17 +18,18 @@ namespace DealersAintSnitchez
             LoggerInstance.Msg("Initialized.");
         }
 
-        [HarmonyPatch(typeof(NPCResponses_Civilian), "GetThreatResponse")]
+        [HarmonyPatch(typeof(NPCResponses_Civilian))]
+        [HarmonyPatch("GetThreatResponse", new Type[] { typeof(NPCResponses_Civilian.EThreatType), typeof(Player) })]
         public static class Patch_GetThreatResponse_None
         {
-            static bool Prefix(NPCResponses_Civilian __instance, ref NPCResponses_Civilian.EAttackResponse __result)
+            static bool Prefix(NPCResponses_Civilian __instance, NPCResponses_Civilian.EThreatType type, Player threatSource, ref NPCResponses_Civilian.EAttackResponse __result)
             {
                 var npcField = typeof(NPCResponses).GetProperty("npc", BindingFlags.NonPublic | BindingFlags.Instance);
                 var npcObj = (NPC)npcField.GetValue(__instance);
                 bool isDealerRecruited = npcObj is Dealer dealer && dealer.IsRecruited;
                 if (isDealerRecruited)
                 {
-                    MelonLogger.Msg("Suppressed ThreatResponse of " + npcObj.FirstName);
+                    MelonLogger.Msg("Suppressed ThreatResponse of " + npcObj.FirstName + " (" + type + ")");
                     __result = NPCResponses_Civilian.EAttackResponse.None;
                     return false;
                 }
